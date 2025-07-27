@@ -64,7 +64,7 @@ class Booking(BaseModel):
     passenger_names: List[str]
     total_price: float
     currency: str
-    booking_date: str
+    booking_date: str = None
     travel_date: str
     status: str = "confirmed"
     payment_status: str = "pending"
