@@ -197,9 +197,11 @@ def serialize_mongo_doc(doc):
     """Convert MongoDB document to JSON serializable format"""
     if doc is None:
         return None
-    if "_id" in doc:
-        del doc["_id"]  # Remove MongoDB ObjectId
-    return doc
+    # Create a copy to avoid modifying the original
+    doc_copy = dict(doc)
+    if "_id" in doc_copy:
+        del doc_copy["_id"]  # Remove MongoDB ObjectId
+    return doc_copy
 
 @app.post("/api/users")
 async def create_user(user: User):
@@ -215,6 +217,7 @@ async def create_user(user: User):
     user_data["created_at"] = datetime.now().isoformat()
     
     db.users.insert_one(user_data)
+    # Return the data we just inserted, not from database
     return {"user": user_data}
 
 @app.get("/api/users/{email}")
