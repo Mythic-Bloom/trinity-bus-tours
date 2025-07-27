@@ -19,6 +19,8 @@ const translations = {
     subtitle: "Cross-Border Travel Made Easy",
     heroDescription: "Book your journey across East Africa with comfort and reliability. Travel between Kenya, Rwanda, Uganda, and Tanzania.",
     bookNow: "Book Your Journey",
+    adminDashboard: "Admin Dashboard",
+    trackJourney: "Track Journey",
     fromCity: "From",
     toCity: "To",
     travelDate: "Travel Date",
@@ -43,13 +45,20 @@ const translations = {
     booked: "Booked",
     bookingConfirmed: "Booking Confirmed!",
     downloadTicket: "Download Ticket",
-    newBooking: "New Booking"
+    newBooking: "New Booking",
+    trackingInfo: "Journey Tracking",
+    currentLocation: "Current Location",
+    estimatedArrival: "Estimated Arrival",
+    busStatus: "Bus Status",
+    yourLocation: "Your Location"
   },
   sw: {
     title: "Trinjty Bus",
     subtitle: "Safari za Kimataifa Zimerahisishwa",
     heroDescription: "Hifadhi safari yako katika Afrika Mashariki kwa starehe na kuaminika. Safiri kati ya Kenya, Rwanda, Uganda, na Tanzania.",
     bookNow: "Hifadhi Safari Yako",
+    adminDashboard: "Dashibodi ya Msimamizi",
+    trackJourney: "Fuatilia Safari",
     fromCity: "Kutoka",
     toCity: "Kwenda",
     travelDate: "Tarehe ya Safari",
@@ -74,13 +83,20 @@ const translations = {
     booked: "Imehifadhiwa",
     bookingConfirmed: "Uhifadhi Umethibitishwa!",
     downloadTicket: "Pakua Tiketi",
-    newBooking: "Uhifadhi Mpya"
+    newBooking: "Uhifadhi Mpya",
+    trackingInfo: "Ufuatiliaji wa Safari",
+    currentLocation: "Mahali pa Sasa",
+    estimatedArrival: "Muda wa Kuwasili",
+    busStatus: "Hali ya Basi",
+    yourLocation: "Mahali Pako"
   },
   fr: {
     title: "Trinjty Bus",
     subtitle: "Voyages Transfrontaliers Simplifiés",
     heroDescription: "Réservez votre voyage à travers l'Afrique de l'Est avec confort et fiabilité. Voyagez entre le Kenya, le Rwanda, l'Ouganda et la Tanzanie.",
     bookNow: "Réservez Votre Voyage",
+    adminDashboard: "Tableau de Bord Admin",
+    trackJourney: "Suivre Voyage",
     fromCity: "De", 
     toCity: "À",
     travelDate: "Date de Voyage",
@@ -105,16 +121,112 @@ const translations = {
     booked: "Réservé",
     bookingConfirmed: "Réservation Confirmée!",
     downloadTicket: "Télécharger Billet",
-    newBooking: "Nouvelle Réservation"
+    newBooking: "Nouvelle Réservation",
+    trackingInfo: "Suivi du Voyage",
+    currentLocation: "Position Actuelle",
+    estimatedArrival: "Arrivée Estimée",
+    busStatus: "Statut du Bus",
+    yourLocation: "Votre Position"
   }
 };
 
 // API base URL
 const API_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
+// Map Component using OpenStreetMap
+const MapView = ({ route, currentLocation, userLocation, showRoute = true }) => {
+  const mapRef = React.useRef(null);
+  const [map, setMap] = useState(null);
+
+  useEffect(() => {
+    if (!window.L) {
+      // Load Leaflet dynamically
+      const leafletCSS = document.createElement('link');
+      leafletCSS.rel = 'stylesheet';
+      leafletCSS.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(leafletCSS);
+
+      const leafletJS = document.createElement('script');
+      leafletJS.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      leafletJS.onload = initializeMap;
+      document.head.appendChild(leafletJS);
+    } else {
+      initializeMap();
+    }
+  }, []);
+
+  const initializeMap = () => {
+    if (mapRef.current && window.L && !map) {
+      const newMap = window.L.map(mapRef.current).setView([-1.2864, 36.8172], 6);
+      
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(newMap);
+
+      setMap(newMap);
+    }
+  };
+
+  useEffect(() => {
+    if (map && route) {
+      // Clear existing markers and routes
+      map.eachLayer((layer) => {
+        if (layer instanceof window.L.Marker || layer instanceof window.L.Polyline) {
+          map.removeLayer(layer);
+        }
+      });
+
+      // Add route waypoints
+      if (showRoute && route.waypoints && route.waypoints.length > 0) {
+        const polyline = window.L.polyline(route.waypoints, { color: 'blue', weight: 3 }).addTo(map);
+        map.fitBounds(polyline.getBounds());
+        
+        // Origin marker
+        window.L.marker(route.origin_coords)
+          .addTo(map)
+          .bindPopup(`Origin: ${route.origin}`)
+          .openPopup();
+        
+        // Destination marker
+        window.L.marker(route.destination_coords)
+          .addTo(map)
+          .bindPopup(`Destination: ${route.destination}`);
+      }
+
+      // Current bus location
+      if (currentLocation && currentLocation.length === 2) {
+        const busIcon = window.L.divIcon({
+          html: '🚌',
+          iconSize: [30, 30],
+          className: 'bus-marker'
+        });
+        
+        window.L.marker(currentLocation, { icon: busIcon })
+          .addTo(map)
+          .bindPopup('Current Bus Location');
+      }
+
+      // User location
+      if (userLocation && userLocation.length === 2) {
+        const userIcon = window.L.divIcon({
+          html: '📍',
+          iconSize: [25, 25],
+          className: 'user-marker'
+        });
+        
+        window.L.marker(userLocation, { icon: userIcon })
+          .addTo(map)
+          .bindPopup('Your Location');
+      }
+    }
+  }, [map, route, currentLocation, userLocation, showRoute]);
+
+  return <div ref={mapRef} className="w-full h-96 rounded-lg shadow-lg"></div>;
+};
+
 // Hero Section Component
 const HeroSection = () => {
-  const { language } = useAppContext();
+  const { language, setCurrentView } = useAppContext();
   const t = translations[language];
 
   return (
@@ -137,15 +249,60 @@ const HeroSection = () => {
         <p className="text-lg md:text-xl mb-12 text-gray-200 leading-relaxed">
           {t.heroDescription}
         </p>
-        <button 
-          onClick={() => document.getElementById('booking-section').scrollIntoView({ behavior: 'smooth' })}
-          className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl"
-        >
-          {t.bookNow}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <button 
+            onClick={() => document.getElementById('booking-section').scrollIntoView({ behavior: 'smooth' })}
+            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl"
+          >
+            {t.bookNow}
+          </button>
+          <button 
+            onClick={() => setCurrentView('admin')}
+            className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl"
+          >
+            {t.adminDashboard}
+          </button>
+        </div>
       </div>
     </div>
   );
+};
+
+// Navigation Component
+const Navigation = () => {
+  const { language, setCurrentView, currentView } = useAppContext();
+  const t = translations[language];
+
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-sm shadow-lg">
+      <div className="max-w-6xl mx-auto px-4 py-3">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-6">
+            <h1 className="text-2xl font-bold text-blue-600">{t.title}</h1>
+            <div className="hidden md:flex space-x-4">
+              <button
+                onClick={() => setCurrentView('booking')}
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  currentView === 'booking' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-blue-50'
+                }`}
+              >
+                {t.bookNow}
+              </button>
+              <button
+                onClick={() => setCurrentView('admin')}
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  currentView === 'admin' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-blue-50'
+                }`}
+              >
+                {t.adminDashboard}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+
 };
 
 // Language Selector Component
@@ -167,7 +324,385 @@ const LanguageSelector = () => {
   );
 };
 
-// Search Form Component
+// Journey Tracking Component
+const JourneyTracking = ({ bookingId, onBack }) => {
+  const { language } = useAppContext();
+  const t = translations[language];
+  const [trackingData, setTrackingData] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTrackingData();
+    getUserLocation();
+    
+    // Update tracking every 30 seconds
+    const interval = setInterval(fetchTrackingData, 30000);
+    return () => clearInterval(interval);
+  }, [bookingId]);
+
+  const fetchTrackingData = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/bookings/${bookingId}/track`);
+      const data = await response.json();
+      setTrackingData(data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching tracking data:', error);
+      setLoading(false);
+    }
+  };
+
+  const getUserLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation([position.coords.latitude, position.coords.longitude]);
+        },
+        (error) => {
+          console.log('Error getting user location:', error);
+        }
+      );
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'scheduled': return 'bg-yellow-500';
+      case 'in_transit': return 'bg-blue-500';
+      case 'arrived': return 'bg-green-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!trackingData) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-600 text-lg">Unable to load tracking information.</p>
+        <button
+          onClick={onBack}
+          className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-gray-800">{t.trackingInfo}</h2>
+        <button
+          onClick={onBack}
+          className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
+        >
+          Back
+        </button>
+      </div>
+
+      {/* Status Card */}
+      <div className="bg-white rounded-2xl shadow-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold">
+            {trackingData.route.origin} → {trackingData.route.destination}
+          </h3>
+          <div className={`px-4 py-2 rounded-full text-white font-semibold ${getStatusColor(trackingData.status)}`}>
+            {trackingData.status.toUpperCase()}
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div>
+            <p className="text-sm text-gray-600">{t.busStatus}</p>
+            <p className="font-semibold">{trackingData.status}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">{t.estimatedArrival}</p>
+            <p className="font-semibold">{new Date(trackingData.eta).toLocaleString()}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">Progress</p>
+            <p className="font-semibold">{trackingData.progress_percentage.toFixed(1)}%</p>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="w-full bg-gray-200 rounded-full h-3 mb-6">
+          <div
+            className="bg-blue-600 h-3 rounded-full transition-all duration-500"
+            style={{ width: `${trackingData.progress_percentage}%` }}
+          ></div>
+        </div>
+
+        {/* Map */}
+        <div className="mb-4">
+          <h4 className="text-lg font-semibold mb-2">{t.currentLocation}</h4>
+          <MapView
+            route={trackingData.route}
+            currentLocation={trackingData.current_location}
+            userLocation={userLocation}
+            showRoute={true}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Admin Dashboard Component
+const AdminDashboard = () => {
+  const { language } = useAppContext();
+  const t = translations[language];
+  const [dashboardData, setDashboardData] = useState(null);
+  const [buses, setBuses] = useState([]);
+  const [routes, setRoutes] = useState([]);
+  const [activeTab, setActiveTab] = useState('overview');
+
+  useEffect(() => {
+    fetchDashboardData();
+    fetchBuses();
+    fetchRoutes();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/dashboard`);
+      const data = await response.json();
+      setDashboardData(data);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    }
+  };
+
+  const fetchBuses = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/buses`);
+      const data = await response.json();
+      setBuses(data.buses);
+    } catch (error) {
+      console.error('Error fetching buses:', error);
+    }
+  };
+
+  const fetchRoutes = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/routes`);
+      const data = await response.json();
+      setRoutes(data.routes);
+    } catch (error) {
+      console.error('Error fetching routes:', error);
+    }
+  };
+
+  const StatCard = ({ title, value, icon, color = "blue" }) => (
+    <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-gray-600 text-sm">{title}</p>
+          <p className={`text-3xl font-bold text-${color}-600`}>{value}</p>
+        </div>
+        <div className={`text-4xl text-${color}-500`}>{icon}</div>
+      </div>
+    </div>
+  );
+
+  if (!dashboardData) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-20">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">Admin Dashboard</h1>
+          
+          {/* Tabs */}
+          <div className="flex space-x-1 bg-gray-200 rounded-lg p-1">
+            {['overview', 'buses', 'routes', 'bookings'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 rounded-md font-medium transition-all ${
+                  activeTab === tab
+                    ? 'bg-white text-blue-600 shadow'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {activeTab === 'overview' && (
+          <>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <StatCard
+                title="Total Bookings"
+                value={dashboardData.stats.total_bookings}
+                icon="📊"
+                color="blue"
+              />
+              <StatCard
+                title="Today's Bookings"
+                value={dashboardData.stats.today_bookings}
+                icon="🎫"
+                color="green"
+              />
+              <StatCard
+                title="Active Buses"
+                value={dashboardData.stats.active_buses}
+                icon="🚌"
+                color="yellow"
+              />
+              <StatCard
+                title="Total Revenue"
+                value={`${dashboardData.stats.total_revenue.toLocaleString()} KES`}
+                icon="💰"
+                color="purple"
+              />
+            </div>
+
+            {/* Recent Bookings */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-xl font-bold mb-4">Recent Bookings</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3">Booking ID</th>
+                      <th className="text-left py-3">Route</th>
+                      <th className="text-left py-3">Seats</th>
+                      <th className="text-left py-3">Price</th>
+                      <th className="text-left py-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dashboardData.recent_bookings.map((booking) => (
+                      <tr key={booking.booking_id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 font-mono text-sm">{booking.booking_id.slice(0, 8)}...</td>
+                        <td className="py-3">{booking.route_id}</td>
+                        <td className="py-3">{booking.seat_numbers.join(', ')}</td>
+                        <td className="py-3">{booking.total_price} {booking.currency}</td>
+                        <td className="py-3">
+                          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                            {booking.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'buses' && (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold">Fleet Management</h3>
+              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                Add New Bus
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {buses.map((bus) => (
+                <div key={bus.bus_id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="font-bold text-lg">{bus.bus_number}</h4>
+                      <p className="text-gray-600">{bus.route_name}</p>
+                    </div>
+                    <div className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      bus.status === 'in_transit' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {bus.status}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Departure</p>
+                      <p className="font-semibold">{bus.departure_time}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Passengers</p>
+                      <p className="font-semibold">{bus.passenger_count}/{bus.capacity}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full"
+                        style={{ width: `${(bus.passenger_count / bus.capacity) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'routes' && (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold">Route Management</h3>
+              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                Add New Route
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {routes.map((route) => (
+                <div key={route.route_id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="font-bold text-lg">{route.origin} → {route.destination}</h4>
+                      <p className="text-gray-600">{route.country_origin} to {route.country_destination}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-blue-600">{route.base_price} {route.currency}</p>
+                      <p className="text-sm text-gray-600">{route.duration_hours}h journey</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <MapView
+                      route={route}
+                      currentLocation={null}
+                      userLocation={null}
+                      showRoute={true}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Search Form Component (same as before, but with tracking button)
 const SearchForm = ({ onSearch }) => {
   const { language } = useAppContext();
   const t = translations[language];
@@ -177,6 +712,7 @@ const SearchForm = ({ onSearch }) => {
     travelDate: ''
   });
   const [countries, setCountries] = useState({});
+  const [trackingId, setTrackingId] = useState('');
 
   useEffect(() => {
     fetchCountries();
@@ -199,67 +735,96 @@ const SearchForm = ({ onSearch }) => {
     }
   };
 
+  const handleTrackJourney = () => {
+    if (trackingId.trim()) {
+      onSearch({ type: 'track', bookingId: trackingId.trim() });
+    }
+  };
+
   const cities = Object.values(countries).flat();
 
   return (
-    <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 max-w-4xl mx-auto">
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">{t.fromCity}</label>
-          <select
-            value={searchData.origin}
-            onChange={(e) => setSearchData({...searchData, origin: e.target.value})}
-            className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          >
-            <option value="">{t.fromCity}</option>
-            {cities.map(city => (
-              <option key={city} value={city}>{city}</option>
-            ))}
-          </select>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">{t.toCity}</label>
-          <select
-            value={searchData.destination}
-            onChange={(e) => setSearchData({...searchData, destination: e.target.value})}
-            className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          >
-            <option value="">{t.toCity}</option>
-            {cities.map(city => (
-              <option key={city} value={city}>{city}</option>
-            ))}
-          </select>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">{t.travelDate}</label>
+    <div className="space-y-6">
+      {/* Search Form */}
+      <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.fromCity}</label>
+            <select
+              value={searchData.origin}
+              onChange={(e) => setSearchData({...searchData, origin: e.target.value})}
+              className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            >
+              <option value="">{t.fromCity}</option>
+              {cities.map(city => (
+                <option key={city} value={city}>{city}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.toCity}</label>
+            <select
+              value={searchData.destination}
+              onChange={(e) => setSearchData({...searchData, destination: e.target.value})}
+              className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            >
+              <option value="">{t.toCity}</option>
+              {cities.map(city => (
+                <option key={city} value={city}>{city}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.travelDate}</label>
+            <input
+              type="date"
+              value={searchData.travelDate}
+              onChange={(e) => setSearchData({...searchData, travelDate: e.target.value})}
+              min={new Date().toISOString().split('T')[0]}
+              className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
+          
+          <div className="flex items-end">
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105"
+            >
+              {t.searchBuses}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Journey Tracking */}
+      <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
+        <h3 className="text-xl font-bold mb-4 text-center">Track Your Journey</h3>
+        <div className="flex gap-4">
           <input
-            type="date"
-            value={searchData.travelDate}
-            onChange={(e) => setSearchData({...searchData, travelDate: e.target.value})}
-            min={new Date().toISOString().split('T')[0]}
-            className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
+            type="text"
+            placeholder="Enter your booking ID"
+            value={trackingId}
+            onChange={(e) => setTrackingId(e.target.value)}
+            className="flex-1 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-        </div>
-        
-        <div className="flex items-end">
           <button
-            type="submit"
-            className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105"
+            onClick={handleTrackJourney}
+            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300"
           >
-            {t.searchBuses}
+            {t.trackJourney}
           </button>
         </div>
-      </form>
+      </div>
     </div>
   );
 };
 
-// Bus List Component
+// Rest of the components remain the same (BusList, SeatSelection, PassengerForm, BookingConfirmation)
 const BusList = ({ buses, onSelectBus }) => {
   const { language } = useAppContext();
   const t = translations[language];
@@ -284,6 +849,7 @@ const BusList = ({ buses, onSelectBus }) => {
               <p className="text-gray-600">
                 Departure: {bus.departure_time} → Arrival: {bus.arrival_time}
               </p>
+              <p className="text-sm text-gray-500">Bus: {bus.bus_number} | Driver: {bus.driver_name}</p>
             </div>
             <div className="text-right">
               <p className="text-3xl font-bold text-blue-600">
@@ -303,6 +869,11 @@ const BusList = ({ buses, onSelectBus }) => {
               <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
                 WiFi & AC
               </span>
+              <span className={`px-3 py-1 rounded-full text-sm ${
+                bus.status === 'scheduled' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
+              }`}>
+                {bus.status}
+              </span>
             </div>
             <button
               onClick={() => onSelectBus(bus)}
@@ -317,7 +888,6 @@ const BusList = ({ buses, onSelectBus }) => {
   );
 };
 
-// Seat Selection Component
 const SeatSelection = ({ bus, onSeatSelect, selectedSeats }) => {
   const { language } = useAppContext();
   const t = translations[language];
@@ -397,7 +967,6 @@ const SeatSelection = ({ bus, onSeatSelect, selectedSeats }) => {
   );
 };
 
-// Passenger Info Form Component
 const PassengerForm = ({ selectedSeats, bus, onSubmit, onBack }) => {
   const { language } = useAppContext();
   const t = translations[language];
@@ -544,8 +1113,7 @@ const PassengerForm = ({ selectedSeats, bus, onSubmit, onBack }) => {
   );
 };
 
-// Booking Confirmation Component
-const BookingConfirmation = ({ booking, onNewBooking }) => {
+const BookingConfirmation = ({ booking, onNewBooking, onTrackJourney }) => {
   const { language } = useAppContext();
   const t = translations[language];
 
@@ -581,12 +1149,18 @@ const BookingConfirmation = ({ booking, onNewBooking }) => {
       </div>
 
       <div className="space-y-4">
-        <button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300">
+        <button
+          onClick={() => onTrackJourney(booking.booking_id)}
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300"
+        >
+          {t.trackJourney}
+        </button>
+        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300">
           {t.downloadTicket}
         </button>
         <button
           onClick={onNewBooking}
-          className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300"
+          className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300"
         >
           {t.newBooking}
         </button>
@@ -598,17 +1172,25 @@ const BookingConfirmation = ({ booking, onNewBooking }) => {
 // Main App Component
 const App = () => {
   const [language, setLanguage] = useState('en');
-  const [currentStep, setCurrentStep] = useState('search'); // search, buses, seats, passenger, confirmation
+  const [currentView, setCurrentView] = useState('booking'); // booking, admin, tracking
+  const [currentStep, setCurrentStep] = useState('search'); // search, buses, seats, passenger, confirmation, tracking
   const [searchResults, setSearchResults] = useState({});
   const [buses, setBuses] = useState([]);
   const [selectedBus, setSelectedBus] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [currentBooking, setCurrentBooking] = useState(null);
+  const [trackingBookingId, setTrackingBookingId] = useState(null);
 
   const t = translations[language];
 
-  // Search for buses
+  // Search for buses or track journey
   const handleSearch = async (searchData) => {
+    if (searchData.type === 'track') {
+      setTrackingBookingId(searchData.bookingId);
+      setCurrentStep('tracking');
+      return;
+    }
+
     try {
       const routeResponse = await fetch(`${API_BASE}/api/routes/search?origin=${searchData.origin}&destination=${searchData.destination}`);
       const routeData = await routeResponse.json();
@@ -708,17 +1290,27 @@ const App = () => {
   // Start new booking
   const handleNewBooking = () => {
     setCurrentStep('search');
+    setCurrentView('booking');
     setSelectedSeats([]);
     setSelectedBus(null);
     setBuses([]);
     setCurrentBooking(null);
+    setTrackingBookingId(null);
+  };
+
+  // Track journey
+  const handleTrackJourney = (bookingId) => {
+    setTrackingBookingId(bookingId);
+    setCurrentStep('tracking');
   };
 
   const contextValue = {
     language,
     setLanguage,
     currentStep,
-    setCurrentStep
+    setCurrentStep,
+    currentView,
+    setCurrentView
   };
 
   return (
@@ -726,91 +1318,109 @@ const App = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
         <LanguageSelector />
         
-        {currentStep === 'search' && (
+        {currentView === 'admin' ? (
+          <AdminDashboard />
+        ) : currentView === 'booking' ? (
           <>
-            <HeroSection />
-            <div id="booking-section" className="py-16 px-4">
-              <div className="max-w-6xl mx-auto">
-                <h2 className="text-4xl font-bold text-center mb-12 text-gray-800">
-                  Book Your Journey
-                </h2>
-                <SearchForm onSearch={handleSearch} />
-              </div>
-            </div>
-          </>
-        )}
-
-        {currentStep === 'buses' && (
-          <div className="py-16 px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-bold text-gray-800">Available Buses</h2>
-                <button
-                  onClick={() => setCurrentStep('search')}
-                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
-                >
-                  {t.backToSearch}
-                </button>
-              </div>
-              <BusList buses={buses} onSelectBus={handleSelectBus} />
-            </div>
-          </div>
-        )}
-
-        {currentStep === 'seats' && selectedBus && (
-          <div className="py-16 px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-bold text-gray-800">Select Your Seats</h2>
-                <button
-                  onClick={() => setCurrentStep('buses')}
-                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
-                >
-                  Back to Buses
-                </button>
-              </div>
-              <SeatSelection 
-                bus={selectedBus} 
-                onSeatSelect={handleSeatSelect}
-                selectedSeats={selectedSeats}
-              />
-              {selectedSeats.length > 0 && (
-                <div className="text-center mt-8">
-                  <button
-                    onClick={handleProceedToPassenger}
-                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300"
-                  >
-                    {t.proceedToPayment}
-                  </button>
+            {currentStep === 'search' && (
+              <>
+                <HeroSection />
+                <div id="booking-section" className="py-16 px-4">
+                  <div className="max-w-6xl mx-auto">
+                    <h2 className="text-4xl font-bold text-center mb-12 text-gray-800">
+                      Book Your Journey or Track Existing Booking
+                    </h2>
+                    <SearchForm onSearch={handleSearch} />
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
+              </>
+            )}
 
-        {currentStep === 'passenger' && selectedBus && (
-          <div className="py-16 px-4">
-            <div className="max-w-4xl mx-auto">
-              <PassengerForm
-                selectedSeats={selectedSeats}
-                bus={selectedBus}
-                onSubmit={handleCreateBooking}
-                onBack={() => setCurrentStep('seats')}
-              />
-            </div>
-          </div>
-        )}
+            {currentStep === 'buses' && (
+              <div className="py-20 px-4">
+                <div className="max-w-4xl mx-auto">
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-bold text-gray-800">Available Buses</h2>
+                    <button
+                      onClick={() => setCurrentStep('search')}
+                      className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
+                    >
+                      {t.backToSearch}
+                    </button>
+                  </div>
+                  <BusList buses={buses} onSelectBus={handleSelectBus} />
+                </div>
+              </div>
+            )}
 
-        {currentStep === 'confirmation' && currentBooking && (
-          <div className="py-16 px-4">
-            <div className="max-w-2xl mx-auto">
-              <BookingConfirmation
-                booking={currentBooking}
-                onNewBooking={handleNewBooking}
-              />
-            </div>
-          </div>
-        )}
+            {currentStep === 'seats' && selectedBus && (
+              <div className="py-20 px-4">
+                <div className="max-w-4xl mx-auto">
+                  <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-bold text-gray-800">Select Your Seats</h2>
+                    <button
+                      onClick={() => setCurrentStep('buses')}
+                      className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
+                    >
+                      Back to Buses
+                    </button>
+                  </div>
+                  <SeatSelection 
+                    bus={selectedBus} 
+                    onSeatSelect={handleSeatSelect}
+                    selectedSeats={selectedSeats}
+                  />
+                  {selectedSeats.length > 0 && (
+                    <div className="text-center mt-8">
+                      <button
+                        onClick={handleProceedToPassenger}
+                        className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300"
+                      >
+                        {t.proceedToPayment}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {currentStep === 'passenger' && selectedBus && (
+              <div className="py-20 px-4">
+                <div className="max-w-4xl mx-auto">
+                  <PassengerForm
+                    selectedSeats={selectedSeats}
+                    bus={selectedBus}
+                    onSubmit={handleCreateBooking}
+                    onBack={() => setCurrentStep('seats')}
+                  />
+                </div>
+              </div>
+            )}
+
+            {currentStep === 'confirmation' && currentBooking && (
+              <div className="py-20 px-4">
+                <div className="max-w-2xl mx-auto">
+                  <BookingConfirmation
+                    booking={currentBooking}
+                    onNewBooking={handleNewBooking}
+                    onTrackJourney={handleTrackJourney}
+                  />
+                </div>
+              </div>
+            )}
+
+            {currentStep === 'tracking' && trackingBookingId && (
+              <div className="py-20 px-4">
+                <div className="max-w-6xl mx-auto">
+                  <JourneyTracking
+                    bookingId={trackingBookingId}
+                    onBack={() => setCurrentStep('search')}
+                  />
+                </div>
+              </div>
+            )}
+          </>
+        ) : null}
       </div>
     </AppContext.Provider>
   );
