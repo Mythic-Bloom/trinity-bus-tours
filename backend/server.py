@@ -252,7 +252,7 @@ async def create_booking(booking: Booking):
 async def get_user_bookings(user_id: str):
     """Get all bookings for a user"""
     bookings = list(db.bookings.find({"user_id": user_id}))
-    return {"bookings": bookings}
+    return {"bookings": [serialize_mongo_doc(booking) for booking in bookings]}
 
 @app.get("/api/bookings/{booking_id}")
 async def get_booking(booking_id: str):
@@ -260,7 +260,7 @@ async def get_booking(booking_id: str):
     booking = db.bookings.find_one({"booking_id": booking_id})
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
-    return {"booking": booking}
+    return {"booking": serialize_mongo_doc(booking)}
 
 @app.post("/api/payment/mock")
 async def mock_payment(payment_data: dict):
