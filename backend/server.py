@@ -237,24 +237,39 @@ async def get_user_by_email(email: str):
 @app.post("/api/bookings")
 async def create_booking(booking: Booking):
     """Create a new booking"""
-    booking.booking_id = str(uuid.uuid4())
-    booking.booking_date = datetime.now().isoformat()
+    booking_id = str(uuid.uuid4())
+    booking_date = datetime.now().isoformat()
     
     # Generate QR code
     qr_data = {
-        "booking_id": booking.booking_id,
+        "booking_id": booking_id,
         "bus_id": booking.bus_id,
         "seats": booking.seat_numbers,
         "travel_date": booking.travel_date
     }
-    booking.qr_code = generate_qr_code(json.dumps(qr_data))
+    qr_code = generate_qr_code(json.dumps(qr_data))
     
-    booking_data = booking.dict()
+    # Create booking data manually to avoid Pydantic serialization issues
+    booking_data = {
+        "booking_id": booking_id,
+        "user_id": booking.user_id,
+        "bus_id": booking.bus_id,
+        "route_id": booking.route_id,
+        "seat_numbers": booking.seat_numbers,
+        "passenger_names": booking.passenger_names,
+        "total_price": booking.total_price,
+        "currency": booking.currency,
+        "booking_date": booking_date,
+        "travel_date": booking.travel_date,
+        "status": booking.status,
+        "payment_status": booking.payment_status,
+        "qr_code": qr_code
+    }
     
     # Update seat availability (in real implementation, this would be atomic)
     # For now, we'll store the booking and rely on frontend to manage seat state
     
-    db.bookings.insert_one(booking_data)
+    db.bookings.insert_one(booking_data.copy())  # Use copy to avoid modifying original
     return {"booking": booking_data}
 
 @app.get("/api/bookings/user/{user_id}")
