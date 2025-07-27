@@ -206,18 +206,24 @@ def serialize_mongo_doc(doc):
 @app.post("/api/users")
 async def create_user(user: User):
     """Create a new user"""
-    user.user_id = str(uuid.uuid4())
+    user_id = str(uuid.uuid4())
     
     # Check if user already exists
     existing_user = db.users.find_one({"email": user.email})
     if existing_user:
         return {"user": serialize_mongo_doc(existing_user)}
     
-    user_data = user.dict()
-    user_data["created_at"] = datetime.now().isoformat()
+    # Create user data manually to avoid Pydantic serialization issues
+    user_data = {
+        "user_id": user_id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "phone": user.phone,
+        "preferred_language": user.preferred_language,
+        "created_at": datetime.now().isoformat()
+    }
     
-    db.users.insert_one(user_data)
-    # Return the data we just inserted, not from database
+    db.users.insert_one(user_data.copy())  # Use copy to avoid modifying original
     return {"user": user_data}
 
 @app.get("/api/users/{email}")
