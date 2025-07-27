@@ -193,6 +193,14 @@ async def get_buses_for_route(route_id: str, date: str):
     
     return {"buses": buses}
 
+def serialize_mongo_doc(doc):
+    """Convert MongoDB document to JSON serializable format"""
+    if doc is None:
+        return None
+    if "_id" in doc:
+        del doc["_id"]  # Remove MongoDB ObjectId
+    return doc
+
 @app.post("/api/users")
 async def create_user(user: User):
     """Create a new user"""
@@ -201,7 +209,7 @@ async def create_user(user: User):
     # Check if user already exists
     existing_user = db.users.find_one({"email": user.email})
     if existing_user:
-        return {"user": existing_user}
+        return {"user": serialize_mongo_doc(existing_user)}
     
     user_data = user.dict()
     user_data["created_at"] = datetime.now().isoformat()
@@ -215,7 +223,7 @@ async def get_user_by_email(email: str):
     user = db.users.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"user": user}
+    return {"user": serialize_mongo_doc(user)}
 
 @app.post("/api/bookings")
 async def create_booking(booking: Booking):
