@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../contexts/AppContext';
-import { translations } from '../translations/translation';
+import { translations } from '../translations';
 import { API_BASE } from '../config/config';
-import { MapView } from './mapview';
-import { Button } from './common/button';
+import { MapView } from './MapView';
 
 export const JourneyTracking = ({ bookingId, onBack }) => {
   const { language } = useAppContext();
@@ -68,9 +67,12 @@ export const JourneyTracking = ({ bookingId, onBack }) => {
     return (
       <div className="text-center py-12">
         <p className="text-gray-600 text-lg">Unable to load tracking information.</p>
-        <Button onClick={onBack} className="mt-4">
+        <button
+          onClick={onBack}
+          className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"
+        >
           Go Back
-        </Button>
+        </button>
       </div>
     );
   }
@@ -79,9 +81,12 @@ export const JourneyTracking = ({ bookingId, onBack }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-gray-800">{t.trackingInfo}</h2>
-        <Button onClick={onBack} variant="secondary">
+        <button
+          onClick={onBack}
+          className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
+        >
           Back
-        </Button>
+        </button>
       </div>
 
       {/* Status Card */}

@@ -2,7 +2,6 @@
 import React from 'react';
 import { useAppContext } from '../contexts/AppContext';
 import { translations } from '../translations';
-import { Button } from './common/button';
 
 export const HeroSection = () => {
   const { language, setCurrentView } = useAppContext();
@@ -29,19 +28,18 @@ export const HeroSection = () => {
           {t.heroDescription}
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button 
+          <button 
             onClick={() => document.getElementById('booking-section').scrollIntoView({ behavior: 'smooth' })}
-            size="lg"
+            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl"
           >
             {t.bookNow}
-          </Button>
-          <Button 
+          </button>
+          <button 
             onClick={() => setCurrentView('admin')}
-            variant="secondary"
-            size="lg"
+            className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl"
           >
             {t.adminDashboard}
-          </Button>
+          </button>
         </div>
       </div>
     </div>
