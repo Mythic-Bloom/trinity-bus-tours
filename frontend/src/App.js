@@ -1,143 +1,119 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState } from 'react';
+import { AppProvider } from './contexts/AppContext';
+import { HeroSection } from './components/HeroSection';
+import { SearchForm } from './components/SearchForm';
+import { BusList } from './components/BusList';
+import { SeatSelection } from './components/SeatSelection';
+import { PassengerForm } from './components/PassengerForm';
+import { BookingConfirmation } from './components/BookingConfirmation';
+import { JourneyTracking } from './components/JourneyTracking';
+import { AdminDashboard } from './components/AdminDashboard';
+//import { LanguageSelector } from './components/LanguageSelector';
+import { translations, getTranslation } from './translations';
+import { API_BASE } from './config/config';
 import './App.css';
-import { createClient } from '@supabase/supabase-js'
 
+const App = () => {
+  const [buses, setBuses] = useState([]);
+  const [selectedBus, setSelectedBus] = useState(null);
+  const [selectedSeats, setSelectedSeats] = useState([]);
+  const [currentBooking, setCurrentBooking] = useState(null);
+  const [trackingBookingId, setTrackingBookingId] = useState(null);
+  const [searchResults, setSearchResults] = useState({});
 
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
-const supabaseKey = process.env.REACT_APP_SUPABASE_KEY
-const supabase = createClient(supabaseUrl, supabaseKey)
-// Context for managing global state
+// Environment variables
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseKey = process.env.REACT_APP_SUPABASE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing Supabase credentials');
+}
+
+// Initialize Supabase client
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// App Context
 const AppContext = createContext();
 
-const useAppContext = () => {
+export const useAppContext = () => {
   const context = useContext(AppContext);
   if (!context) {
     throw new Error('useAppContext must be used within AppProvider');
   }
   return context;
 };
+export interface CurrencyData {
+  currencies: string[];
+  symbols: { [key: string]: string };
+  rates: { [key: string]: number };
+}
 
+export interface Route {
+  route_id: string;
+  origin: string;
+  destination: string;
+  country_origin: string;
+  country_destination: string;
+  duration_hours: number;
+  base_price: number;
+  base_currency: string;
+  prices: { [key: string]: number };
+  formatted_prices: { [key: string]: string };
+  origin_coords: number[];
+  destination_coords: number[];
+  available_seats: number[];
+}
 // Language translations
-const translations = {
-  en: {
-    title: "Trinjty Bus",
-    subtitle: "Cross-Border Travel Made Easy",
-    heroDescription: "Book your journey across East Africa with comfort and reliability. Travel between Kenya, Rwanda, Uganda, and Tanzania.",
-    bookNow: "Book Your Journey",
-    adminDashboard: "Admin Dashboard",
-    trackJourney: "Track Journey",
-    fromCity: "From",
-    toCity: "To",
-    travelDate: "Travel Date",
-    searchBuses: "Search Buses",
-    selectSeats: "Select Your Seats",
-    passengers: "Passengers",
-    totalPrice: "Total Price",
-    bookingDetails: "Booking Details",
-    passengerInfo: "Passenger Information",
-    paymentMethod: "Payment Method",
-    confirmBooking: "Confirm Booking",
-    fullName: "Full Name",
-    email: "Email Address",
-    phone: "Phone Number",
-    backToSearch: "Back to Search",
-    backToSeats: "Back to Seat Selection",
-    proceedToPayment: "Proceed to Payment",
-    economy: "Economy",
-    premium: "Premium",
-    available: "Available",
-    selected: "Selected",
-    booked: "Booked",
-    bookingConfirmed: "Booking Confirmed!",
-    downloadTicket: "Download Ticket",
-    newBooking: "New Booking",
-    trackingInfo: "Journey Tracking",
-    currentLocation: "Current Location",
-    estimatedArrival: "Estimated Arrival",
-    busStatus: "Bus Status",
-    yourLocation: "Your Location"
-  },
-  sw: {
-    title: "Trinjty Bus",
-    subtitle: "Safari za Kimataifa Zimerahisishwa",
-    heroDescription: "Hifadhi safari yako katika Afrika Mashariki kwa starehe na kuaminika. Safiri kati ya Kenya, Rwanda, Uganda, na Tanzania.",
-    bookNow: "Hifadhi Safari Yako",
-    adminDashboard: "Dashibodi ya Msimamizi",
-    trackJourney: "Fuatilia Safari",
-    fromCity: "Kutoka",
-    toCity: "Kwenda",
-    travelDate: "Tarehe ya Safari",
-    searchBuses: "Tafuta Mabasi",
-    selectSeats: "Chagua Viti Vyako",
-    passengers: "Abiria",
-    totalPrice: "Jumla ya Bei",
-    bookingDetails: "Maelezo ya Uhifadhi",
-    passengerInfo: "Taarifa za Abiria",
-    paymentMethod: "Njia ya Malipo",
-    confirmBooking: "Thibitisha Uhifadhi",
-    fullName: "Jina Kamili",
-    email: "Barua Pepe",
-    phone: "Nambari ya Simu",
-    backToSearch: "Rudi Utafutaji",
-    backToSeats: "Rudi Uchaguzi wa Viti",
-    proceedToPayment: "Endelea Malipo",
-    economy: "Kawaida",
-    premium: "Bora",
-    available: "Inapatikana",
-    selected: "Imechaguliwa",
-    booked: "Imehifadhiwa",
-    bookingConfirmed: "Uhifadhi Umethibitishwa!",
-    downloadTicket: "Pakua Tiketi",
-    newBooking: "Uhifadhi Mpya",
-    trackingInfo: "Ufuatiliaji wa Safari",
-    currentLocation: "Mahali pa Sasa",
-    estimatedArrival: "Muda wa Kuwasili",
-    busStatus: "Hali ya Basi",
-    yourLocation: "Mahali Pako"
-  },
-  fr: {
-    title: "Trinjty Bus",
-    subtitle: "Voyages Transfrontaliers Simplifiés",
-    heroDescription: "Réservez votre voyage à travers l'Afrique de l'Est avec confort et fiabilité. Voyagez entre le Kenya, le Rwanda, l'Ouganda et la Tanzanie.",
-    bookNow: "Réservez Votre Voyage",
-    adminDashboard: "Tableau de Bord Admin",
-    trackJourney: "Suivre Voyage",
-    fromCity: "De", 
-    toCity: "À",
-    travelDate: "Date de Voyage",
-    searchBuses: "Rechercher Bus",
-    selectSeats: "Sélectionner Vos Sièges",
-    passengers: "Passagers",
-    totalPrice: "Prix Total",
-    bookingDetails: "Détails de Réservation",
-    passengerInfo: "Informations Passager",
-    paymentMethod: "Méthode de Paiement",
-    confirmBooking: "Confirmer Réservation",
-    fullName: "Nom Complet",
-    email: "Adresse Email",
-    phone: "Numéro de Téléphone",
-    backToSearch: "Retour Recherche",
-    backToSeats: "Retour Sélection Sièges",
-    proceedToPayment: "Procéder au Paiement",
-    economy: "Économique",
-    premium: "Premium",
-    available: "Disponible",
-    selected: "Sélectionné",
-    booked: "Réservé",
-    bookingConfirmed: "Réservation Confirmée!",
-    downloadTicket: "Télécharger Billet",
-    newBooking: "Nouvelle Réservation",
-    trackingInfo: "Suivi du Voyage",
-    currentLocation: "Position Actuelle",
-    estimatedArrival: "Arrivée Estimée",
-    busStatus: "Statut du Bus",
-    yourLocation: "Votre Position"
-  }
+
+export const getRoutes = async (currency: string = 'USD'): Promise<Route[]> => {
+  const response = await fetch(`${API_BASE}/routes?currency=${currency}`);
+  if (!response.ok) throw new Error('Failed to fetch routes');
+  return response.json();
 };
 
+export const getCurrencies = async (): Promise<CurrencyData> => {
+  const response = await fetch(`${API_BASE}/currencies`);
+  if (!response.ok) throw new Error('Failed to fetch currencies');
+  return response.json();
+};
 // API base URL
 const API_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
+export const API = {
+  routes: {
+    getAll: async (currency: string = 'USD') => {
+      const response = await fetch(`${API_BASE}/routes?currency=${currency}`);
+      if (!response.ok) throw new Error('Failed to fetch routes');
+      return response.json();
+    },
+    search: async (origin: string, destination: string) => {
+      const response = await fetch(`${API_BASE}/routes/search?origin=${origin}&destination=${destination}`);
+      if (!response.ok) throw new Error('Failed to fetch routes');
+      return response.json();
+    }
+  },
+  currencies: {
+    getAll: async () => {
+      const response = await fetch(`${API_BASE}/currencies`);
+      if (!response.ok) throw new Error('Failed to fetch currencies');
+      return response.json();
+    }
+  }
+};
+// Add loading state
+const [isLoading, setIsLoading] = useState(false);
+
+// Update handleSearch function
+const handleSearch = async (searchData) => {
+  setIsLoading(true);
+  try {
+    // ...existing code...
+  } catch (error) {
+    console.error('Search error:', error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 // Map Component using OpenStreetMap
 const MapView = ({ route, currentLocation, userLocation, showRoute = true }) => {
   const mapRef = React.useRef(null);
@@ -830,7 +806,7 @@ const SearchForm = ({ onSearch }) => {
 };
 
 // Rest of the components remain the same (BusList, SeatSelection, PassengerForm, BookingConfirmation)
-const BusList = ({ buses, onSelectBus }) => {
+const BusList = ({ buses, onSelectBus, currency = 'USD' }) => {
   const { language } = useAppContext();
   const t = translations[language];
 
