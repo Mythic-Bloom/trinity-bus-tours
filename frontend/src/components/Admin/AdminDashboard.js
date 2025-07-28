@@ -6,7 +6,7 @@ import { API_BASE } from '../../config/config';
 import { MapView } from '../MapView';
 
 export const AdminDashboard = () => {
-  const { language } = useAppContext();
+  const { language, handleNavigateToBooking } = useAppContext();
   const t = translations[language];
   const [dashboardData, setDashboardData] = useState(null);
   const [buses, setBuses] = useState([]);
@@ -73,7 +73,15 @@ export const AdminDashboard = () => {
     <div className="min-h-screen bg-gray-50 py-20">
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">Admin Dashboard</h1>
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-4xl font-bold text-gray-800">Admin Dashboard</h1>
+            <button
+              onClick={() => handleNavigateToBooking()}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300"
+            >
+              Back to Booking
+            </button>
+          </div>
           
           {/* Tabs */}
           <div className="flex space-x-1 bg-gray-200 rounded-lg p-1">

@@ -13,7 +13,7 @@ export const useAppContext = () => {
 
 export const AppProvider = ({ children }) => {
   const [language, setLanguage] = useState('en');
-  const [currentView, setCurrentView] = useState('booking');
+  const [currentPage, setCurrentPage] = useState('booking');
   const [currentStep, setCurrentStep] = useState('search');
 
   const contextValue = {
@@ -21,8 +21,8 @@ export const AppProvider = ({ children }) => {
     setLanguage,
     currentStep,
     setCurrentStep,
-    currentView,
-    setCurrentView
+    currentPage,
+    setCurrentPage
   };
 
   return (

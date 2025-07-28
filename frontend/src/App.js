@@ -16,7 +16,7 @@ import './App.css';
 
 const App = () => {
   const [language, setLanguage] = useState('en');
-  const [currentView, setCurrentView] = useState('booking'); // booking, admin, tracking
+  const [currentPage, setCurrentPage] = useState('booking'); // booking, admin
   const [currentStep, setCurrentStep] = useState('search'); // search, buses, seats, passenger, confirmation, tracking
   const [searchResults, setSearchResults] = useState({});
   const [buses, setBuses] = useState([]);
@@ -134,7 +134,7 @@ const App = () => {
   // Start new booking
   const handleNewBooking = () => {
     setCurrentStep('search');
-    setCurrentView('booking');
+    setCurrentPage('booking');
     setSelectedSeats([]);
     setSelectedBus(null);
     setBuses([]);
@@ -148,24 +148,39 @@ const App = () => {
     setCurrentStep('tracking');
   };
 
+  // Navigate to admin dashboard
+  const handleNavigateToAdmin = () => {
+    setCurrentPage('admin');
+  };
+
+  // Navigate to booking page
+  const handleNavigateToBooking = () => {
+    setCurrentPage('booking');
+    setCurrentStep('search');
+  };
+
   const contextValue = {
     language,
     setLanguage,
     currentStep,
     setCurrentStep,
-    currentView,
-    setCurrentView
+    currentPage,
+    setCurrentPage,
+    handleNavigateToAdmin,
+    handleNavigateToBooking
   };
 
   return (
     <AppProvider value={contextValue}>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+      <div className="min-h-screen">
         <LanguageSelector />
         
-        {currentView === 'admin' ? (
-          <AdminDashboard />
-        ) : currentView === 'booking' ? (
-          <>
+        {currentPage === 'admin' ? (
+          <div className="min-h-screen bg-gray-50">
+            <AdminDashboard />
+          </div>
+        ) : (
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
             {currentStep === 'search' && (
               <>
                 <HeroSection />
@@ -263,8 +278,8 @@ const App = () => {
                 </div>
               </div>
             )}
-          </>
-        ) : null}
+          </div>
+        )}
       </div>
     </AppProvider>
   );

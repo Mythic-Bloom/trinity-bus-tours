@@ -3,7 +3,7 @@ import { useAppContext } from '../../contexts/AppContext';
 import { translations } from '../../translations';
 
 export const Navigation = () => {
-  const { language, setCurrentView, currentView } = useAppContext();
+  const { language, handleNavigateToBooking, handleNavigateToAdmin, currentPage } = useAppContext();
   const t = translations[language];
 
   return (
@@ -14,17 +14,17 @@ export const Navigation = () => {
             <h1 className="text-2xl font-bold text-blue-600">{t.title}</h1>
             <div className="hidden md:flex space-x-4">
               <button
-                onClick={() => setCurrentView('booking')}
+                onClick={handleNavigateToBooking}
                 className={`px-4 py-2 rounded-lg transition-all ${
-                  currentView === 'booking' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-blue-50'
+                  currentPage === 'booking' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-blue-50'
                 }`}
               >
                 {t.bookNow}
               </button>
               <button
-                onClick={() => setCurrentView('admin')}
+                onClick={handleNavigateToAdmin}
                 className={`px-4 py-2 rounded-lg transition-all ${
-                  currentView === 'admin' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-blue-50'
+                  currentPage === 'admin' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-blue-50'
                 }`}
               >
                 {t.adminDashboard}

@@ -4,7 +4,7 @@ import { useAppContext } from '../contexts/AppContext';
 import { translations } from '../translations';
 
 export const HeroSection = () => {
-  const { language, setCurrentView } = useAppContext();
+  const { language, handleNavigateToAdmin } = useAppContext();
   const t = translations[language];
 
   return (
@@ -35,7 +35,7 @@ export const HeroSection = () => {
             {t.bookNow}
           </button>
           <button 
-            onClick={() => setCurrentView('admin')}
+            onClick={() => handleNavigateToAdmin()}
             className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl"
           >
             {t.adminDashboard}
