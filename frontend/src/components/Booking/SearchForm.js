@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { translations } from '../../translations';
 import { API_BASE } from '../../config/config';
+import { Input } from '../common/input';
+import { Button } from '../common/button';
 
 export const SearchForm = ({ onSearch }) => {
   const { language } = useAppContext();
@@ -49,55 +51,39 @@ export const SearchForm = ({ onSearch }) => {
       {/* Search Form */}
       <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.fromCity}</label>
-            <select
-              value={searchData.origin}
-              onChange={(e) => setSearchData({...searchData, origin: e.target.value})}
-              className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            >
-              <option value="">{t.fromCity}</option>
-              {cities.map(city => (
-                <option key={city} value={city}>{city}</option>
-              ))}
-            </select>
-          </div>
+          <Input
+            type="select"
+            label={t.fromCity}
+            placeholder={t.fromCity}
+            value={searchData.origin}
+            onChange={(e) => setSearchData({...searchData, origin: e.target.value})}
+            options={cities}
+            required
+          />
           
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.toCity}</label>
-            <select
-              value={searchData.destination}
-              onChange={(e) => setSearchData({...searchData, destination: e.target.value})}
-              className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            >
-              <option value="">{t.toCity}</option>
-              {cities.map(city => (
-                <option key={city} value={city}>{city}</option>
-              ))}
-            </select>
-          </div>
+          <Input
+            type="select"
+            label={t.toCity}
+            placeholder={t.toCity}
+            value={searchData.destination}
+            onChange={(e) => setSearchData({...searchData, destination: e.target.value})}
+            options={cities}
+            required
+          />
           
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.travelDate}</label>
-            <input
-              type="date"
-              value={searchData.travelDate}
-              onChange={(e) => setSearchData({...searchData, travelDate: e.target.value})}
-              min={new Date().toISOString().split('T')[0]}
-              className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
+          <Input
+            type="date"
+            label={t.travelDate}
+            value={searchData.travelDate}
+            onChange={(e) => setSearchData({...searchData, travelDate: e.target.value})}
+            min={new Date().toISOString().split('T')[0]}
+            required
+          />
           
           <div className="flex items-end">
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105"
-            >
+            <Button type="submit" className="w-full">
               {t.searchBuses}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -113,12 +99,9 @@ export const SearchForm = ({ onSearch }) => {
             onChange={(e) => setTrackingId(e.target.value)}
             className="flex-1 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-          <button
-            onClick={handleTrackJourney}
-            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300"
-          >
+          <Button variant="success" onClick={handleTrackJourney}>
             {t.trackJourney}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

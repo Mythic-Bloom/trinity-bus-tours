@@ -2,6 +2,7 @@
 import React from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { translations } from '../../translations';
+import { Button } from '../common/button';
 
 export const BusList = ({ buses, onSelectBus, currency = 'USD' }) => {
   const { language } = useAppContext();
@@ -53,12 +54,9 @@ export const BusList = ({ buses, onSelectBus, currency = 'USD' }) => {
                 {bus.status}
               </span>
             </div>
-            <button
-              onClick={() => onSelectBus(bus)}
-              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300"
-            >
+            <Button onClick={() => onSelectBus(bus)}>
               {t.selectSeats}
-            </button>
+            </Button>
           </div>
         </div>
       ))}

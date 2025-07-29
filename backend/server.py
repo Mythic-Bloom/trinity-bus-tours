@@ -315,6 +315,39 @@ async def get_currencies() -> Dict[str, Union[List[str], Dict[str, str], Dict[st
         "rates": CURRENCY_RATES
     }
 
+@app.get("/api/countries")
+def get_countries():
+    """
+    Get supported countries and their major cities for bus routes.
+    
+    Returns:
+        Dict: Countries with their cities
+    """
+    countries_data = {
+        "Kenya": [
+            "Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", 
+            "Thika", "Malindi", "Kitale", "Garissa", "Kakamega"
+        ],
+        "Rwanda": [
+            "Kigali", "Butare", "Gitarama", "Ruhengeri", "Gisenyi",
+            "Cyangugu", "Kibungo", "Byumba", "Gikongoro", "Kibuye"
+        ],
+        "Uganda": [
+            "Kampala", "Entebbe", "Jinja", "Mbale", "Gulu", 
+            "Lira", "Mbarara", "Kasese", "Soroti", "Arua"
+        ],
+        "Tanzania": [
+            "Dar es Salaam", "Arusha", "Mwanza", "Dodoma", "Mbeya",
+            "Tanga", "Morogoro", "Tabora", "Kigoma", "Iringa"
+        ]
+    }
+    
+    return {
+        "countries": countries_data,
+        "total_countries": len(countries_data),
+        "total_cities": sum(len(cities) for cities in countries_data.values())
+    }
+
 @app.post("/bookings/", response_model=BookingResponse)
 @limiter.limit("30/minute")
 async def create_booking(request: Request, booking: Booking) -> BookingResponse:

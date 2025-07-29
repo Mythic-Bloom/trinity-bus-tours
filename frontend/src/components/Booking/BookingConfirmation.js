@@ -2,6 +2,7 @@
 import React from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { translations } from '../../translations';
+import { Button } from '../common/button';
 
 export const BookingConfirmation = ({ booking, onNewBooking, onTrackJourney }) => {
   const { language } = useAppContext();
@@ -39,21 +40,23 @@ export const BookingConfirmation = ({ booking, onNewBooking, onTrackJourney }) =
       </div>
 
       <div className="space-y-4">
-        <button
+        <Button
           onClick={() => onTrackJourney(booking.booking_id)}
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300"
+          variant="success"
+          className="w-full"
         >
           {t.trackJourney}
-        </button>
-        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300">
+        </Button>
+        <Button className="w-full">
           {t.downloadTicket}
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={onNewBooking}
-          className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300"
+          variant="secondary"
+          className="w-full"
         >
           {t.newBooking}
-        </button>
+        </Button>
       </div>
     </div>
   );
